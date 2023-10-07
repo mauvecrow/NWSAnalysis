@@ -14,27 +14,43 @@ public class NwsService : INwsService
         _httpClientFactory = httpClientFactory;
     }
 
-    async Task<StationDto?> INwsService.GetStation(string stationId)
+    async Task<StationsDto?> INwsService.GetStations(string state)
     {
         var httpClient = _httpClientFactory.CreateClient();
-        var requestMessage = prepareMessage(baseUri);
+        var requestMessage = prepareMessage($"{baseUri}?state={state}");
         var responseMessage = await httpClient.SendAsync(requestMessage);
         if (responseMessage.IsSuccessStatusCode)
         {
             using var contentStream = await responseMessage.Content.ReadAsStreamAsync();
-            return await JsonSerializer.DeserializeAsync<StationDto>(contentStream);
+            return await JsonSerializer.DeserializeAsync<StationsDto>(contentStream);
+        }
+        return default;
+    }
+
+    async Task<StationDto?> INwsService.GetStation(string stationId)
+    {
+        var httpClient = _httpClientFactory.CreateClient();
+        var requestMessage = prepareMessage($"{baseUri}/{stationId}");
+        var responseMessage = await httpClient.SendAsync(requestMessage);
+        if (responseMessage.IsSuccessStatusCode)
+        {
+            using var contentStream = await responseMessage.Content.ReadAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<StationDto?>(contentStream);
         }
         return default;
     }
 
     async Task<Observations?> INwsService.GetStationObservations(string stationId)
     {
-        throw new NotImplementedException();
-    }
-
-    async Task<StationsDto?> INwsService.GetStations(string state)
-    {
-        throw new NotImplementedException();
+        var httpClient = _httpClientFactory.CreateClient();
+        var requestMessage = prepareMessage($"{baseUri}/{stationId}/observations");
+        var responseMessage = await httpClient.SendAsync(requestMessage);
+        if (responseMessage.IsSuccessStatusCode)
+        {
+            using var contentStream = await responseMessage.Content.ReadAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<Observations?>(contentStream);
+        }
+        return default;
     }
 
     private HttpRequestMessage prepareMessage(string uri)
