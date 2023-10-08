@@ -22,7 +22,8 @@ public class NwsService : INwsService
         if (responseMessage.IsSuccessStatusCode)
         {
             using var contentStream = await responseMessage.Content.ReadAsStreamAsync();
-            return await JsonSerializer.DeserializeAsync<StationsDto>(contentStream);
+            return await JsonSerializer.DeserializeAsync<StationsDto?>(contentStream);
+
         }
         return default;
     }
@@ -53,15 +54,42 @@ public class NwsService : INwsService
         return default;
     }
 
+    public async Task<string?> GetRawStation(string stationId)
+    {
+        var httpClient = _httpClientFactory.CreateClient();
+        var requestMessage = prepareMessage($"{baseUri}/{stationId}");
+        var responseMessage = await httpClient.SendAsync(requestMessage);
+        if (responseMessage.IsSuccessStatusCode)
+        {
+            //using var contentStream = await responseMessage.Content.ReadAsStreamAsync();
+
+            return await responseMessage.Content.ReadAsStringAsync();
+        }
+        return default;
+    }
+
+    public async Task<string?> GetRawObservation(string stationId)
+    {
+        var httpClient = _httpClientFactory.CreateClient();
+        var requestMessage = prepareMessage($"{baseUri}/{stationId}/observations");
+        var responseMessage = await httpClient.SendAsync(requestMessage);
+        if (responseMessage.IsSuccessStatusCode)
+        {
+            //using var contentStream = await responseMessage.Content.ReadAsStreamAsync();
+
+            return await responseMessage.Content.ReadAsStringAsync();
+        }
+        return default;
+    }
+
     private HttpRequestMessage prepareMessage(string uri)
     {
-        return new HttpRequestMessage(HttpMethod.Get, baseUri)
+        return new HttpRequestMessage(HttpMethod.Get, uri)
         {
             Headers =
             {
                 {HeaderNames.Accept, "application/geo+json"},
-                {HeaderNames.ContentType, "application/json"},
-                {HeaderNames.UserAgent, "bradley.quangson@gmail.com"}
+                {HeaderNames.UserAgent,  "NswServiceApp/v1.0 (http://localhost; bquangson@gmail.com)"}
             }
         };
     }
