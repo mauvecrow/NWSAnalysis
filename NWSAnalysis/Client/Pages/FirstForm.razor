@@ -1,0 +1,32 @@
+﻿@using NWSAnalysis.Shared.Models;
+@using System.ComponentModel.DataAnnotations;
+@using System.Text.Json;
+@inject HttpClient Http
+
+<EditForm Model=@Model>
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <label for="inStatecode">Enter a state code</label>
+        <InputText @bind-Value=Model.StateCode id="inStateCode" class="form-control" />
+        <button type="submit" @onclick=@CallApi>Search</button>
+    </div>
+    
+    <br />
+</EditForm>
+
+@code {
+    [Parameter]
+    public ForecastDetails Model { get; set; }
+
+    [Parameter]
+    public EventCallback<ForecastDetails> ModelChanged { get; set; }
+
+    async void CallApi()
+    {
+        var response = await Http.GetAsync("/api/forecast/CO");
+        using var cs = await response.Content.ReadAsStreamAsync();
+        Model = await JsonSerializer.DeserializeAsync<ForecastDetails>(cs);
+        await ModelChanged.InvokeAsync(Model);
+        StateHasChanged();
+    }
+}
