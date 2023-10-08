@@ -1,9 +1,87 @@
 ﻿@page "/"
+@using NWSAnalysis.Shared.Models;
+@using System.Text.Json;
+@using System.ComponentModel.DataAnnotations;
+@inject HttpClient Http
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Weather Forecast</PageTitle>
+<EditForm Model=@Model>
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <label for="inStatecode">Enter a state code</label>
+        <InputText @bind-Value=stateCode id="inStateCode" class="form-control" />
+        <button type="button" @onclick=@CallApi class="btn btn-secondary">Search Stations</button>
+    </div>
+@if( Model.StationNames != null)
+    {
+        <div class="form-group">
+            <label for="inStaition">Select a station location</label>
+            <InputSelect @bind-Value=Model.StationChoice id="inStation" class="form-control">
+                @foreach (var kvp in Model.StationNames)
+                {
+                    <option value=@kvp.Key>@kvp.Value</option>
+                }
+            </InputSelect>
 
-<h1>Hello, world!</h1>
+            <button type="button" @onclick=@CallForecasts class="btn btn-secondary">Get Forecasts</button>
+        </div>
+    }
+    
+</EditForm>
+@* <p>state code: @Model.StateCode</p>
+<p>choice: @Model.StationChoice</p> *@
+@if( Model.TemperatureReadings != null)
+{
+    <table class="table">
+            <tr>
+                <th scope="col">Day</th>
+                <th scope="col">Min (C)</th>
+                <th scope="col">Max (C)</th>
+            </tr>
+            
+    @foreach (var rs in Model.TemperatureReadings
+    .GroupBy( entry => entry.Key.Date,
+       (key, entries) => new
+       {
+          Key = $"{key.Month}/{key.Day}/{key.Year}",
+          Count = entries.Count(),
+          Min = entries.Min(e => e.Value),
+          Max = entries.Max(e => e.Value)
+       }))
+    {
+            <tr>
+                <td scope ="row">@rs.Key</td>
+                <td>@rs.Min</td>
+                <td>@rs.Max</td>
+            </tr>
+    }
+        
+    </table>
+}
 
-Welcome to your new app.
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code {
+    public ForecastDetails Model = new();
+
+    private string? stateCode;
+
+    async void CallApi()
+    {
+        var response = await Http.GetAsync("/api/forecast/"+stateCode);
+        using var cs = await response.Content.ReadAsStreamAsync();
+        Model = await JsonSerializer.DeserializeAsync<ForecastDetails>(cs);
+        // Model.StateCode = stateCode;
+        StateHasChanged();
+    }
+
+    async void CallForecasts()
+    {
+        var response = await Http.GetAsync("/api/temp/" + Model.StationChoice);
+        using var cs = await response.Content.ReadAsStreamAsync();
+        Model.TemperatureReadings = await JsonSerializer.DeserializeAsync<Dictionary<DateTime, float?>>(cs);
+        StateHasChanged();
+    }
+
+
+    
+}
