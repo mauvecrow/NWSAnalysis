@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NWSAnalysis.Shared.Models;
@@ -36,7 +37,9 @@ public class StationsDto
 
     public class Properties
     {
+        [JsonPropertyName("@id")]
         public string? id { get; set; }
+        [JsonPropertyName("@type")]
         public string? type { get; set; }
         public Elevation? elevation { get; set; }
         public string? stationIdentifier { get; set; }
